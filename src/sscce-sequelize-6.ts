@@ -21,21 +21,75 @@ export async function run() {
     },
   });
 
-  class Foo extends Model {}
+  class A extends Model {
+  }
 
-  Foo.init({
-    name: DataTypes.TEXT,
+  A.init({}, {
+    sequelize
+  });
+  class B extends Model { }
+
+  B.init({}, {
+    sequelize
+  });
+  //junction table with user defined unique constraint of [AId, BId, additionalField]
+  class C extends Model {
+  }
+  C.init({
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    AId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: A
+      },
+      unique: 'unique_index'
+    },
+    BId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: B,
+      },
+      unique: 'unique_index'
+    },
+    additionalField: {
+      type: DataTypes.BOOLEAN,
+      unique: 'unique_index'
+    }
   }, {
-    sequelize,
-    modelName: 'Foo',
+    sequelize
   });
 
-  // You can use sinon and chai assertions directly in your SSCCE.
-  const spy = sinon.spy();
-  sequelize.afterBulkSync(() => spy());
-  await sequelize.sync({ force: true });
-  expect(spy).to.have.been.called;
 
-  console.log(await Foo.create({ name: 'TS foo' }));
-  expect(await Foo.count()).to.equal(1);
+  //turn off default unique constraint
+  A.belongsToMany(B, { through: { model: C, unique: false }, foreignKey: { name: 'AId' } });
+  B.belongsToMany(A, { through: { model: C, unique: false }, foreignKey: { name: 'BId' } });
+
+
+  await sequelize.sync({ force: true });
+
+  const a = await A.create();
+
+  const b = await B.create();
+
+  //@ts-ignore
+  await a.addB(b, {
+    through: {
+      additionalField: false
+    }
+  });
+
+  //@ts-ignore
+  await a.addB(b, {
+    through: {
+      additionalField: true
+    }
+  });
+
+  //@ts-ignore
+  const bs = await a.getBs();
+  expect(bs.length).to.equal(2);
 }
