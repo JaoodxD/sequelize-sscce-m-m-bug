@@ -55,7 +55,7 @@ export async function run() {
       },
       unique: 'unique_index'
     },
-    additionalField: {
+    flag: {
       type: DataTypes.BOOLEAN,
       unique: 'unique_index'
     }
@@ -78,14 +78,14 @@ export async function run() {
   //@ts-ignore
   await a.addB(b, {
     through: {
-      additionalField: false
+      flag: false
     }
   });
 
   //@ts-ignore
   await a.addB(b, {
     through: {
-      additionalField: true
+      flag: true
     }
   });
 
